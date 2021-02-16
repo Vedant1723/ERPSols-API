@@ -7,7 +7,7 @@ require("dotenv").config();
 
 //@GET Route
 //@DESC GET All the Admins
-router.get("/getAdmins", adminAuth, async (req, res) => {
+router.get("/all", adminAuth, async (req, res) => {
   try {
     const admins = await Admin.find();
     if (admins.length == 0) {
@@ -48,6 +48,7 @@ router.post("/signup", async (req, res) => {
 
     const salt = await bcrypt.genSalt(10);
     admin.password = await bcrypt.hash(admin.password, salt);
+    await admin.save();
     const payload = {
       admin: {
         id: admin.id,
@@ -80,7 +81,7 @@ router.post("/login", async (req, res) => {
     if (!admin) {
       return res.json({ msg: "Admin Not Found!" });
     }
-    const isMatch = await bcrypt.compare(admin.password, password);
+    const isMatch = await bcrypt.compare(password, admin.password);
     if (!isMatch) {
       return res.json({ msg: "Please Enter a Valid Credentials!" });
     }
@@ -95,10 +96,12 @@ router.post("/login", async (req, res) => {
       { expiresIn: 3600000000000 },
       (err, token) => {
         if (err) throw err;
-        res.json(token);
+        res.json({ token: token });
       }
     );
-  } catch (error) {}
+  } catch (error) {
+    console.log(error.message);
+  }
 });
 
 //@PUT Route

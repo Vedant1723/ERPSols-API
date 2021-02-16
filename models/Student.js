@@ -17,7 +17,7 @@ const StudentSchema = new mongoose.Schema({
     type: String,
     required: "Student Password is Required!",
   },
-  class: {
+  classOfStudent: {
     type: String,
     required: "Student Class is Required!",
   },
