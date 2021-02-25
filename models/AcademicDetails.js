@@ -3,6 +3,9 @@ const AcademicDetailsSchema = new mongoose.Schema({
   userID: {
     type: mongoose.Schema.Types.ObjectId,
   },
+  resume: {
+    type: String,
+  },
   school: {
     tenth: {
       type: String,

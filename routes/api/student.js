@@ -7,6 +7,22 @@ const PersonalDetails = require("../../models/PersonalDetails");
 const Student = require("../../models/Student");
 const Teacher = require("../../models/Teacher");
 require("dotenv").config();
+const multer = require("multer");
+const path = require("path");
+
+const storage = multer.diskStorage({
+  destination: "./studentUploads",
+  filename: (req, file, cb) => {
+    return cb(
+      null,
+      `${file.fieldname}_${Date.now()}${path.extname(file.originalname)}`
+    );
+  },
+});
+
+const upload = multer({
+  storage: storage,
+});
 
 //@GET Route
 //@GET All Students of Respective Institute or Departmnet
@@ -36,6 +52,10 @@ router.post("/signup", async (req, res) => {
     classOfStudent,
     designation,
     department,
+    gender,
+    adhaarCard,
+    batchYear,
+    passedOutYear,
   } = req.body;
   var studentFields = {};
   try {
@@ -44,6 +64,10 @@ router.post("/signup", async (req, res) => {
     if (password) studentFields.password = password;
     if (designation) studentFields.designation = designation;
     if (department) studentFields.department = department;
+    if (gender) studentFields.gender = gender;
+    if (adhaarCard) studentFields.adhaarCard = adhaarCard;
+    if (batchYear) studentFields.batchYear = batchYear;
+    if (passedOutYear) studentFields.passedOutYear = passedOutYear;
     if (rollNo) studentFields.rollNo = rollNo;
     if (classOfStudent) studentFields.classOfStudent = classOfStudent;
     var std = await Student.findOne({ rollNo });
@@ -200,6 +224,43 @@ router.post("/createPersonalDetails/:id", async (req, res) => {
     res.json({
       msg: "Student Personal Info Created!",
       studentPersonal: studentPersonal,
+    });
+  } catch (error) {
+    console.log(error.message);
+  }
+});
+
+//@POST Route
+//@DESC Upload Resume
+router.post("/uploadResume/:id", upload.single("resume"), async (req, res) => {
+  var academicDetailsFields = {};
+  try {
+    academicDetailsFields.resume = `http://${req.headers.host}/studentUploads/${req.file.filename}`;
+    var academicDetails = await AcademicDetails.findOne({
+      userID: req.params.id,
+    });
+    if (academicDetails) {
+      academicDetails = await AcademicDetails.findOneAndUpdate(
+        {
+          _id: req.params.id,
+        },
+        {
+          $set: academicDetailsFields,
+        },
+        {
+          new: true,
+        }
+      );
+      return res.json({
+        msg: "Student Resume Uploaded and Student Updated!",
+        academicDetails: academicDetails,
+      });
+    }
+    academicDetails = new AcademicDetails(academicDetailsFields);
+    await academicDetails.save();
+    res.json({
+      msg: "Academic Details Created!",
+      academicDetails: academicDetails,
     });
   } catch (error) {
     console.log(error.message);
