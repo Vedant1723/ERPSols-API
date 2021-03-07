@@ -7,6 +7,9 @@ const PlacementSchema = new mongoose.Schema({
   designation: {
     type: String,
   },
+  aboutCompany: {
+    type: String,
+  },
   ctc: {
     type: String,
   },
@@ -21,6 +24,16 @@ const PlacementSchema = new mongoose.Schema({
   },
   companySite: {
     type: String,
+  },
+  institute: {
+    type: String,
+  },
+  venue: {
+    type: String,
+  },
+  placementStatus: {
+    type: String,
+    default: "Active",
   },
 });
 

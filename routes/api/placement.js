@@ -4,17 +4,26 @@ const Teacher = require("../../models/Teacher");
 const router = require("express").Router();
 const sgMail = require("@sendgrid/mail");
 const Student = require("../../models/Student");
+const adminAuth = require("../../middleware/adminAuth");
+const Admin = require("../../models/Admin");
 sgMail.setApiKey(
   "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"
 );
 
+//@TODO
+//DATE AND TIME to be settled down!
+
 //@GET ALl Placements
-router.get("/getAllPlacements", async (req, res) => {
+router.get("/getAllPlacements", adminAuth, async (req, res) => {
   try {
-    const placements = await Placement.find();
+    const adminInstitute = await Admin.findById(req.admin.id);
+    const placements = await Placement.find({
+      institute: adminInstitute.institute,
+    });
     if (placements.length == 0) {
       return res.status(400).json({ msg: "No Placements Available" });
     }
+
     res.json(placements);
   } catch (error) {
     console.log(error.message);
@@ -23,7 +32,7 @@ router.get("/getAllPlacements", async (req, res) => {
 
 //@POST Route
 //@DESC Create or Update Placement
-router.post("/createPlacement", async (req, res) => {
+router.post("/createPlacement", adminAuth, async (req, res) => {
   const {
     companyName,
     designation,
@@ -32,16 +41,20 @@ router.post("/createPlacement", async (req, res) => {
     placementType,
     department,
     companySite,
+    venue,
   } = req.body;
   var placementFields = {};
   try {
     if (companyName) placementFields.companyName = companyName;
+    if (venue) placementFields.venue = venue;
     if (designation) placementFields.designation = designation;
     if (ctc) placementFields.ctc = ctc;
     if (location) placementFields.location = location;
     if (placementType) placementFields.placementType = placementType;
     if (department) placementFields.department = department;
     if (companySite) placementFields.companySite = companySite;
+    var adminInstitute = await Admin.findById(req.admin.id);
+    placementFields.institute = adminInstitute.institute;
     var placement = new Placement(placementFields);
     await placement.save();
     const teachers = await Teacher.find({ department: req.body.department });
@@ -64,7 +77,7 @@ router.post("/createPlacement", async (req, res) => {
         const msg = {
           to: emailList[i],
           from: "vedant.pruthi.io@gmail.com",
-          subject: "Placement Aareli",
+          subject: "Placement Incoming",
           text: "First Message via Send Grid",
 
           html:
@@ -108,10 +121,16 @@ router.put("/update/:id", async (req, res) => {
     placementType,
     department,
     companySite,
+    institute,
+    venue,
+    placementStatus,
   } = req.body;
   var placementFields = {};
   try {
     if (companyName) placementFields.companyName = companyName;
+    if (institute) placementFields.institute = institute;
+    if (venue) placementFields.venue = venue;
+    if (placementStatus) placementFields.placementStatus = placementStatus;
     if (designation) placementFields.designation = designation;
     if (ctc) placementFields.ctc = ctc;
     if (location) placementFields.location = location;

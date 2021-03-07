@@ -42,7 +42,9 @@ const genEmpID = () => {
 router.get("/all", adminAuth, async (req, res) => {
   try {
     const adminDept = await Admin.findById(req.admin.id);
-    const teachers = await Teacher.find({ institute: adminDept.institute });
+    const teachers = await Teacher.find({
+      institute: adminDept.institute,
+    }).sort({ department: -1 });
     if (teachers.length == 0) {
       return res.json({ msg: "No Teachers Found!" });
     }
@@ -54,15 +56,8 @@ router.get("/all", adminAuth, async (req, res) => {
 
 //@POST Route
 //@DESC Create Teacher or Signup
-router.post("/signup", async (req, res) => {
-  const {
-    name,
-    email,
-    password,
-    designation,
-    department,
-    institute,
-  } = req.body;
+router.post("/signup", adminAuth, async (req, res) => {
+  const { name, email, password, designation, department } = req.body;
   var teacherFields = {};
   try {
     if (name) teacherFields.name = name;
@@ -70,7 +65,10 @@ router.post("/signup", async (req, res) => {
     if (designation) teacherFields.designation = designation;
     if (password) teacherFields.password = password;
     if (department) teacherFields.department = department;
-    if (institute) teacherFields.institute = institute;
+
+    const adminInstitute = await Admin.findById(req.admin.id);
+    teacherFields.institute = adminInstitute.institute;
+
     var teacher = await Teacher.findOne({ email });
     if (teacher) {
       return res.status(400).json({ msg: "Teacher already Exists" });
@@ -221,14 +219,17 @@ router.post("/createAcademics", teacherAuth, async (req, res) => {
   }
 });
 
-//@DElETE Route
-//@DESC Delete a Teacher By ID
+//@DELETE Route
+//@DESC Delete Teacher by ID
 router.delete("/delete/:id", async (req, res) => {
   try {
-    await Teacher.findOneAndDelete({ _id: req.params.id });
+    await Teacher.findOneAndDelete(req.params.id);
     res.json({ msg: "Teacher Deleted!" });
   } catch (error) {
     console.log(error.message);
+    if (error.kind == "ObjectId") {
+      return res.json({ msg: "Enter the Valid Teacher ID!" });
+    }
   }
 });
 
@@ -357,4 +358,5 @@ router.get("/getAllDetails", teacherAuth, async (req, res) => {
     console.log(error.message);
   }
 });
+
 module.exports = router;
