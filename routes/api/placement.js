@@ -39,14 +39,25 @@ router.post("/createPlacement", adminAuth, async (req, res) => {
     location,
     ctc,
     placementType,
+    date,
+    time,
+    eligibilityCriteria,
     department,
     companySite,
     venue,
+    mainCampus,
+    locations,
   } = req.body;
   var placementFields = {};
   try {
     if (companyName) placementFields.companyName = companyName;
+    if (date) placementFields.date = date;
+    if (time) placementFields.time = time;
+    if (eligibilityCriteria)
+      placementFields.eligibilityCriteria = eligibilityCriteria;
     if (venue) placementFields.venue = venue;
+    if (mainCampus) placementFields.mainCampus = mainCampus;
+    if (locations) placementFields.locations = locations;
     if (designation) placementFields.designation = designation;
     if (ctc) placementFields.ctc = ctc;
     if (location) placementFields.location = location;
@@ -122,12 +133,23 @@ router.put("/update/:id", async (req, res) => {
     department,
     companySite,
     institute,
+    mainCampus,
+    locations,
     venue,
     placementStatus,
+    date,
+    time,
+    eligibilityCriteria,
   } = req.body;
   var placementFields = {};
   try {
+    if (date) placementFields.date = date;
+    if (time) placementFields.time = time;
+    if (eligibilityCriteria)
+      placementFields.eligibilityCriteria = eligibilityCriteria;
     if (companyName) placementFields.companyName = companyName;
+    if (locations) placementFields.locations = locations;
+    if (mainCampus) placementFields.mainCampus = mainCampus;
     if (institute) placementFields.institute = institute;
     if (venue) placementFields.venue = venue;
     if (placementStatus) placementFields.placementStatus = placementStatus;

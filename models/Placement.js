@@ -16,6 +16,12 @@ const PlacementSchema = new mongoose.Schema({
   location: {
     type: String,
   },
+  mainCampus: {
+    type: String,
+  },
+  locations: {
+    type: [String],
+  },
   placementType: {
     type: String,
   },
@@ -29,6 +35,15 @@ const PlacementSchema = new mongoose.Schema({
     type: String,
   },
   venue: {
+    type: String,
+  },
+  date: {
+    type: String,
+  },
+  time: {
+    type: String,
+  },
+  eligibilityCriteria: {
     type: String,
   },
   placementStatus: {
