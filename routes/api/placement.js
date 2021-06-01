@@ -6,6 +6,7 @@ const sgMail = require("@sendgrid/mail");
 const Student = require("../../models/Student");
 const adminAuth = require("../../middleware/adminAuth");
 const Admin = require("../../models/Admin");
+const { default: axios } = require("axios");
 sgMail.setApiKey(
   "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"
 );
@@ -47,10 +48,12 @@ router.post("/createPlacement", adminAuth, async (req, res) => {
     venue,
     mainCampus,
     locations,
+    batchYear,
   } = req.body;
   var placementFields = {};
   try {
     if (companyName) placementFields.companyName = companyName;
+    if (batchYear) placementFields.batchYear = batchYear;
     if (date) placementFields.date = date;
     if (time) placementFields.time = time;
     if (eligibilityCriteria)
@@ -64,12 +67,21 @@ router.post("/createPlacement", adminAuth, async (req, res) => {
     if (placementType) placementFields.placementType = placementType;
     if (department) placementFields.department = department;
     if (companySite) placementFields.companySite = companySite;
+    if (eligibilityCriteria)
+      placementFields.eligibilityCriteria = eligibilityCriteria;
     var adminInstitute = await Admin.findById(req.admin.id);
     placementFields.institute = adminInstitute.institute;
     var placement = new Placement(placementFields);
     await placement.save();
-    const teachers = await Teacher.find({ department: req.body.department });
-    const students = await Student.find({ department: req.body.department });
+    var admin = await Admin.findById(req.admin.id);
+    const teachers = await Teacher.find({
+      department: req.body.department,
+      institute: admin.institute,
+    });
+    const students = await Student.find({
+      department: req.body.department,
+      institute: admin.institute,
+    });
     if (teachers.length != 0) {
       var emailList = [];
       emailList.push(
@@ -115,7 +127,11 @@ router.post("/createPlacement", adminAuth, async (req, res) => {
     } else {
       console.log("No Teachers of this department");
     }
-    res.json({ msg: "Placement Created!", placement: placement });
+    res.json({
+      success: true,
+      msg: "Placement Created!",
+      placement: placement,
+    });
   } catch (error) {
     console.log(error.message);
   }
@@ -140,10 +156,12 @@ router.put("/update/:id", async (req, res) => {
     date,
     time,
     eligibilityCriteria,
+    batchYear,
   } = req.body;
   var placementFields = {};
   try {
     if (date) placementFields.date = date;
+    if (batchYear) placementFields.batchYear = batchYear;
     if (time) placementFields.time = time;
     if (eligibilityCriteria)
       placementFields.eligibilityCriteria = eligibilityCriteria;
@@ -174,6 +192,36 @@ router.put("/update/:id", async (req, res) => {
     if (error.kind == "ObjectId") {
       return res.json({ msg: "Please Enter a Valid Placement ID" });
     }
+  }
+});
+
+//@GET Route
+//@DESC Active/In-Active the placements
+router.get("/change/status/placement/:id", async (req, res) => {
+  try {
+    var placement = await Placement.findById(req.params.id);
+    if (!placement) {
+      return { msg: "Placement ID is invalid" };
+    }
+    if (placement.placementStatus == "In-Active") {
+      placement = await Placement.findOneAndUpdate(
+        { _id: req.params.id },
+        { $set: { placementStatus: "Active" } },
+        { new: true }
+      );
+    } else {
+      placement = await Placement.findOneAndUpdate(
+        { _id: req.params.id },
+        { $set: { placementStatus: "In-Active" } },
+        { new: true }
+      );
+    }
+    return {
+      success: true,
+      msg: "Status Updated!",
+    };
+  } catch (error) {
+    console.log(error.message);
   }
 });
 

@@ -3,10 +3,11 @@ const router = require("express").Router();
 const adminAuth = require("../../middleware/adminAuth");
 const Admin = require("../../models/Admin");
 const Teacher = require("../../models/Teacher");
+const teacherAuth = require("../../middleware/teacherAuth");
 
 //@GET Route
 //@DESC Get All Departments
-router.get("/", async (req, res) => {
+router.get("/", adminAuth, async (req, res) => {
   try {
     const admin = await Admin.findById(req.admin.id);
     const departments = await Department.find({ institute: admin.institute });
@@ -19,9 +20,24 @@ router.get("/", async (req, res) => {
   }
 });
 
+//@GET Route
+//@DESC Get All Departments
+router.get("/teacher", teacherAuth, async (req, res) => {
+  try {
+    const teacher = await Teacher.findById(req.teacher.id);
+    const departments = await Department.find({ institute: teacher.institute });
+    if (departments.length == 0) {
+      return res.json({ msg: "No Departments Found!" });
+    }
+    res.json(departments);
+  } catch (error) {
+    console.log(error.message);
+  }
+});
+
 //@POST Route
 //@DESC Create the Department
-router.post("/", adminAuth, async (req, res) => {
+router.post("/create", adminAuth, async (req, res) => {
   const { deptName, deptCode } = req.body;
   var deptFields = {};
   try {

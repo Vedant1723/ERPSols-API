@@ -36,13 +36,13 @@ router.get("/getDetails", adminAuth, async (req, res) => {
 //@POST Route
 //@DESC Create Admin
 router.post("/signup", async (req, res) => {
-  const { name, email, password, designation, institute } = req.body;
+  const { name, email, password, institute } = req.body;
   var adminFields = {};
   try {
     if (name) adminFields.name = name;
     if (email) adminFields.email = email;
     if (password) adminFields.password = password;
-    if (designation) adminFields.designation = designation;
+    adminFields.designation = "Admin";
     if (institute) adminFields.institute = institute;
     var admin = new Admin(adminFields);
 

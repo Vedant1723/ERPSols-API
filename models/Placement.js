@@ -44,11 +44,22 @@ const PlacementSchema = new mongoose.Schema({
     type: String,
   },
   eligibilityCriteria: {
-    type: String,
+    tenth: {
+      type: Number,
+    },
+    twelth: {
+      type: Number,
+    },
+    graduation: {
+      type: Number,
+    },
   },
   placementStatus: {
     type: String,
     default: "Active",
+  },
+  batchYear: {
+    type: String,
   },
 });
 

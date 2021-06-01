@@ -33,6 +33,15 @@ const StudentSchema = new mongoose.Schema({
     type: String,
     required: "Student Passed out Year is Required!",
   },
+  tenth: {
+    type: Number,
+  },
+  twelth: {
+    type: Number,
+  },
+  graduation: {
+    type: Number,
+  },
   gender: {
     type: String,
   },
@@ -40,6 +49,9 @@ const StudentSchema = new mongoose.Schema({
     type: String,
   },
   adhaarCard: {
+    type: String,
+  },
+  institute: {
     type: String,
   },
 });

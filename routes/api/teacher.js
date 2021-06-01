@@ -8,9 +8,12 @@ const Teacher = require("../../models/Teacher");
 require("dotenv").config();
 const AcademicDetails = require("../../models/AcademicDetails");
 const PersonalDetails = require("../../models/PersonalDetails");
+const Placement = require("../../models/Placement");
 const multer = require("multer");
 const path = require("path");
 const sgMail = require("@sendgrid/mail");
+const PlacementApplied = require("../../models/PlacementApplied");
+const Student = require("../../models/Student");
 sgMail.setApiKey(
   "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"
 );
@@ -53,6 +56,24 @@ router.get("/all", adminAuth, async (req, res) => {
     console.log(error.message);
   }
 });
+
+//@GET Route
+//@DESC Get all students of specific teacher
+router.get("/allStudents", teacherAuth, async (req, res) => {
+  try {
+    const teacher = await Teacher.findById(req.teacher.id);
+    const students = await Student.find({ department: teacher.department });
+    if (students.length == 0) {
+      return res.json({ msg: "No Students found" });
+    }
+    res.json(students);
+  } catch (error) {
+    console.log(error.message);
+  }
+});
+
+//@GET Route
+//@DESC GET Teachers of Respective Department
 
 //@POST Route
 //@DESC Create Teacher or Signup
@@ -182,6 +203,99 @@ router.get("/getAcademics", teacherAuth, async (req, res) => {
       return res.status(400).json({ msg: "No Academic Details Added!" });
     }
     res.json(academics);
+  } catch (error) {
+    console.log(error.message);
+  }
+});
+
+//@POST Route
+//@DESC Create or Update Placement
+router.post("/createPlacement", teacherAuth, async (req, res) => {
+  const {
+    companyName,
+    designation,
+    location,
+    ctc,
+    placementType,
+    date,
+    time,
+    eligibilityCriteria,
+    department,
+    companySite,
+    venue,
+    mainCampus,
+    locations,
+    batchYear,
+  } = req.body;
+  var placementFields = {};
+  try {
+    if (companyName) placementFields.companyName = companyName;
+    if (batchYear) placementFields.batchYear = batchYear;
+    if (date) placementFields.date = date;
+    if (time) placementFields.time = time;
+    if (eligibilityCriteria)
+      placementFields.eligibilityCriteria = eligibilityCriteria;
+    if (venue) placementFields.venue = venue;
+    if (mainCampus) placementFields.mainCampus = mainCampus;
+    if (locations) placementFields.locations = locations;
+    if (designation) placementFields.designation = designation;
+    if (ctc) placementFields.ctc = ctc;
+    if (location) placementFields.location = location;
+    if (placementType) placementFields.placementType = placementType;
+    if (department) placementFields.department = department;
+    if (companySite) placementFields.companySite = companySite;
+    var teacher = await Teacher.findById(req.teacher.id);
+    placementFields.institute = teacher.institute;
+    var placement = new Placement(placementFields);
+    await placement.save();
+    const teachers = await Teacher.find({ department: req.body.department });
+    const students = await Student.find({ department: req.body.department });
+    if (teachers.length != 0) {
+      var emailList = [];
+      emailList.push(
+        teachers.map((teacher) => {
+          return teacher.email;
+        })
+      );
+      if (students.length != 0) {
+        emailList.push(
+          students.map((student) => {
+            return student.email;
+          })
+        );
+      }
+      for (var i = 0; i < emailList.length; i++) {
+        const msg = {
+          to: emailList[i],
+          from: "vedant.pruthi.io@gmail.com",
+          subject: "Placement Incoming",
+          text: "First Message via Send Grid",
+
+          html:
+            "<div style='border-radius:10px; border-style:solid; border-width:1px; padding:10px'><p>Greetings from ERP Sols</p><p>Hello " +
+            companyName +
+            " is Hiring for " +
+            designation +
+            "</p><p>Details are:</p><p>CTC : <b>" +
+            ctc +
+            "</b></p><p>Location : <b>" +
+            location +
+            "</b></p><p>Thankyou</p><p>Regards</p><p>Admin</p><p>Team ERP Sols.</p></div>",
+        };
+        sgMail
+          .send(msg)
+          .then(() => {
+            console.log("Email Sent", msg);
+          })
+          .catch((error) => {
+            console.log(error.message);
+          });
+      }
+      console.log(emailList);
+    } else {
+      console.log("No Teachers of this department");
+    }
+    res.json({ msg: "Placement Created!", placement: placement });
   } catch (error) {
     console.log(error.message);
   }
@@ -354,6 +468,81 @@ router.get("/getAllDetails", teacherAuth, async (req, res) => {
       personalDetails: personalDetails,
       academicDetails: academicDetails,
     });
+  } catch (error) {
+    console.log(error.message);
+  }
+});
+
+//@GET Placements of Teacher Department
+router.get("/all/placements", teacherAuth, async (req, res) => {
+  try {
+    const teacher = await Teacher.findById(req.teacher.id);
+    const placement = await Placement.find({ department: teacher.department });
+
+    res.json(placement);
+  } catch (error) {
+    console.log(error.message);
+  }
+});
+
+//@GET Placed Students of Specific Company
+router.get("/getPlaced/:pID", teacherAuth, async (req, res) => {
+  try {
+    var teacher = await Teacher.findById(req.teacher.id);
+    var students = await PlacedStudent.find({
+      placementID: req.params.pID,
+    });
+    if (students.length == 0) {
+      return res.json({ msg: "No Students Placed in this Company" });
+    }
+    res.json(students);
+  } catch (error) {
+    console.log(error.message);
+  }
+});
+
+//@GET Applied Students of Specific Placement
+router.get("/getStudents/:pID", async (req, res) => {
+  try {
+    // var teacher = await Teacher.findById(req.teacher.id);
+    var appliedPlacements = await PlacementApplied.find({
+      placementID: req.params.pID,
+    });
+
+    res.json(appliedPlacements);
+  } catch (error) {
+    console.log(error.message);
+  }
+});
+
+//@GET ALL teacher of respective department
+router.get("/teachers/all", teacherAuth, async (req, res) => {
+  try {
+    var teacher = await Teacher.findById(req.teacher.id);
+    var teachers = await Teacher.find({
+      department: teacher.department,
+      institute: teacher.institute,
+    });
+    if (teachers.length == 0) {
+      return res.json({ msg: "No Teacher of this department" });
+    }
+    res.json(teachers);
+  } catch (error) {
+    console.log(error.message);
+  }
+});
+
+//@GET All student of respective department
+router.get("/students/all", teacherAuth, async (req, res) => {
+  try {
+    var teacher = await Teacher.findById(req.teacher.id);
+    var students = await Student.find({
+      department: teacher.department,
+    });
+    if (students.length == 0) {
+      return res.json({ msg: "No Students of this department" });
+    }
+    res.json(students);
   } catch (error) {
     console.log(error.message);
   }
