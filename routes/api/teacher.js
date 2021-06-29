@@ -14,6 +14,8 @@ const path = require("path");
 const sgMail = require("@sendgrid/mail");
 const PlacementApplied = require("../../models/PlacementApplied");
 const Student = require("../../models/Student");
+const nodemailer = require("nodemailer");
+const mailer = require("../../NodeMailer");
 sgMail.setApiKey(
   "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"
 );
@@ -104,8 +106,15 @@ router.post("/signup", adminAuth, async (req, res) => {
     teacher = new Teacher(teacherFields);
     const salt = await bcrypt.genSalt(10);
     teacher.password = await bcrypt.hash(teacher.password, salt);
-    await teacher.save();
-
+    var transport = nodemailer.createTransport({
+      service: "gmail",
+      host: "smtp.gmail.com",
+      port: 5000,
+      auth: {
+        user: "vedant.pruthi.io@gmail.com",
+        pass: "System.in_1723",
+      },
+    });
     const msg = {
       to: teacher.email,
       from: "vedant.pruthi.io@gmail.com",
@@ -113,22 +122,16 @@ router.post("/signup", adminAuth, async (req, res) => {
       text: "First Message via Send Grid",
 
       html:
-        "<div style='border-radius:10px; border-style:solid; border-width:1px; padding:10px'><p>Greetings from ERP Sols</p><p>Hello " +
+        "<div style='border-radius:10px; border-style:solid; border-width:1px; padding:10px'><p>Greetings from Placement Assistor</p><p>Hello " +
         teacher.name +
-        ". Your Account for ERP Sols is Created!</p><p>Your Credentials are:</p><p>Emp ID : <b>" +
+        ". Your Account for Placement Assistor is Created!</p><p>Your Credentials are:</p><p>Emp ID : <b>" +
         teacher.empID +
         "</b></p><p>Password : <b>" +
         password +
-        "</b></p><p>Thankyou</p><p>Regards</p><p>Admin</p><p>Team ERP Sols.</p></div>",
+        "</b></p><p>Thankyou</p><p>Regards</p><p>Admin</p><p>Team Placement Assistor.</p></div>",
     };
-    sgMail
-      .send(msg)
-      .then(() => {
-        console.log("Email Sent", msg);
-      })
-      .catch((error) => {
-        console.log(error.message);
-      });
+    await mailer(transport, msg);
+    await teacher.save();
     const payload = {
       teacher: {
         id: teacher.id,
@@ -173,7 +176,7 @@ router.post("/login", async (req, res) => {
     }
     const isMatch = await bcrypt.compare(password, teacher.password);
     if (!isMatch) {
-      return res.status(400).json({ msg: "Invalid Credentials!" });
+      return res.json({ msg: "Invalid Credentials!" });
     }
     const payload = {
       teacher: {
@@ -335,10 +338,10 @@ router.post("/createAcademics", teacherAuth, async (req, res) => {
 
 //@DELETE Route
 //@DESC Delete Teacher by ID
-router.delete("/delete/:id", async (req, res) => {
+router.delete("/delete/:id", adminAuth, async (req, res) => {
   try {
     await Teacher.findOneAndDelete(req.params.id);
-    res.json({ msg: "Teacher Deleted!" });
+    res.json({ statusCode: 200, msg: "Teacher Deleted!" });
   } catch (error) {
     console.log(error.message);
     if (error.kind == "ObjectId") {

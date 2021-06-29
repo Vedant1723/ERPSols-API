@@ -15,6 +15,8 @@ const adminAuth = require("../../middleware/adminAuth");
 const Admin = require("../../models/Admin");
 const PlacementApplied = require("../../models/PlacementApplied");
 const PlacedStudent = require("../../models/PlacedStudent");
+const nodemailer = require("nodemailer");
+const mailer = require("../../NodeMailer");
 
 const storage = multer.diskStorage({
   destination: "./studentUploads",
@@ -111,6 +113,32 @@ router.post("/signup", async (req, res) => {
     var student = new Student(studentFields);
     const salt = await bcrypt.genSalt(10);
     student.password = await bcrypt.hash(student.password, salt);
+
+    var transport = nodemailer.createTransport({
+      service: "gmail",
+      host: "smtp.gmail.com",
+      port: 5000,
+      auth: {
+        user: "vedant.pruthi.io@gmail.com",
+        pass: "System.in_1723",
+      },
+    });
+    const msg = {
+      to: student.email,
+      from: "vedant.pruthi.io@gmail.com",
+      subject: "Account Created",
+      text: "First Message via Send Grid",
+
+      html:
+        "<div style='border-radius:10px; border-style:solid; border-width:1px; padding:10px'><p>Greetings from ERP Sols</p><p>Hello " +
+        student.name +
+        ". Your Account for ERP Sols is Created!</p><p>Your Credentials are:</p><p>Emp ID : <b>" +
+        student.rollNo +
+        "</b></p><p>Password : <b>" +
+        password +
+        "</b></p><p>Thankyou</p><p>Regards</p><p>Admin</p><p>Team ERP Sols.</p></div>",
+    };
+    await mailer(transport, msg);
     await student.save();
     const payload = {
       student: {
@@ -123,7 +151,11 @@ router.post("/signup", async (req, res) => {
       { expiresIn: 3600000000 },
       (err, token) => {
         if (err) throw err;
-        res.json({ msg: "Student Created Successfully!", token: token });
+        res.json({
+          msg: "Student Created Successfully!",
+          token: token,
+          success: true,
+        });
       }
     );
   } catch (error) {
@@ -195,7 +227,7 @@ router.put("/update/:id", async (req, res) => {
 
 //@DELETE Route
 //@DESC Delete Student By ID
-router.delete("/delete/:id", async (req, res) => {
+router.delete("/delete/:id", adminAuth, async (req, res) => {
   try {
     await Student.findOneAndDelete(req.params.id);
     await AcademicDetails.findOneAndDelete({ userID: req.params.id });

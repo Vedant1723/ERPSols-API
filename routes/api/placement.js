@@ -6,7 +6,8 @@ const sgMail = require("@sendgrid/mail");
 const Student = require("../../models/Student");
 const adminAuth = require("../../middleware/adminAuth");
 const Admin = require("../../models/Admin");
-const { default: axios } = require("axios");
+const nodemailer = require("nodemailer");
+const mailer = require("../../NodeMailer");
 sgMail.setApiKey(
   "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"
 );
@@ -48,11 +49,15 @@ router.post("/createPlacement", adminAuth, async (req, res) => {
     venue,
     mainCampus,
     locations,
+    aboutCompany,
     batchYear,
+    skills,
   } = req.body;
   var placementFields = {};
   try {
     if (companyName) placementFields.companyName = companyName;
+    if (skills) placementFields.skills = skills;
+    if (aboutCompany) placementFields.aboutCompany = aboutCompany;
     if (batchYear) placementFields.batchYear = batchYear;
     if (date) placementFields.date = date;
     if (time) placementFields.time = time;
@@ -96,33 +101,60 @@ router.post("/createPlacement", adminAuth, async (req, res) => {
           })
         );
       }
-      for (var i = 0; i < emailList.length; i++) {
-        const msg = {
-          to: emailList[i],
-          from: "vedant.pruthi.io@gmail.com",
-          subject: "Placement Incoming",
-          text: "First Message via Send Grid",
+      var transport = nodemailer.createTransport({
+        service: "gmail",
+        host: "smtp.gmail.com",
+        port: 5000,
+        auth: {
+          user: "vedant.pruthi.io@gmail.com",
+          pass: "System.in_1723",
+        },
+      });
+      var graduationMarks = eligibilityCriteria.graduation
+        ? eligibilityCriteria.graduation
+        : "--";
 
-          html:
-            "<div style='border-radius:10px; border-style:solid; border-width:1px; padding:10px'><p>Greetings from ERP Sols</p><p>Hello " +
-            companyName +
-            " is Hiring for " +
-            designation +
-            "</p><p>Details are:</p><p>CTC : <b>" +
-            ctc +
-            "</b></p><p>Location : <b>" +
-            location +
-            "</b></p><p>Thankyou</p><p>Regards</p><p>Admin</p><p>Team ERP Sols.</p></div>",
-        };
-        sgMail
-          .send(msg)
-          .then(() => {
-            console.log("Email Sent", msg);
-          })
-          .catch((error) => {
-            console.log(error.message);
-          });
-      }
+      const msg = {
+        to: emailList,
+        from: "vedant.pruthi.io@gmail.com",
+        subject: "Placement Incoming",
+        html:
+          "   <div style='border-radius:10px; border-style:solid; border-width:1px; padding:10px'><p>Greetings from Placement Assistor</p><p>Hello <b> " +
+          companyName +
+          "</b> is Hiring for <b> " +
+          designation +
+          " </b></p><p>" +
+          "<p><h3>About Company</h3></p>" +
+          aboutCompany +
+          "</p><p>Job Details are:</p><p><b>Skills</b> :" +
+          skills +
+          "</p><p><b>>Eligibility Criteria</b> :<div style=`display:flex;flex-direction: column;`><div><b>10th</b> : " +
+          eligibilityCriteria.tenth +
+          "</div><div><b>12th</b> : " +
+          eligibilityCriteria.twelth +
+          "</div><div><b>Graduation</b> :" +
+          graduationMarks +
+          "</div></div></p><p>CTC : <b>" +
+          ctc +
+          "</b></p><p>Location : <b>" +
+          location +
+          "</b></p><p>Website : <a href=" +
+          companySite +
+          ">" +
+          companySite +
+          "</a></p><p>Placement Type : <b>" +
+          placementType +
+          "</b></p><p>Venue : <b>" +
+          venue +
+          "</b></p><p>Date : <b>" +
+          date +
+          "</b></p><p>Time : <b>" +
+          time +
+          "</b></p><p><b> Note : Please contact your institute's Admin or Department for more details </b></p><p>Thankyou</p><p>Regards</p><p>Admin</p><p>" +
+          placementFields.institute +
+          "</p><p>Team Placement Assistor.</p></div>",
+      };
+      await mailer(transport, msg);
       console.log(emailList);
     } else {
       console.log("No Teachers of this department");

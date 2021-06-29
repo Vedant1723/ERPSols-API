@@ -43,6 +43,9 @@ const PlacementSchema = new mongoose.Schema({
   time: {
     type: String,
   },
+  skills: {
+    type: String,
+  },
   eligibilityCriteria: {
     tenth: {
       type: Number,
